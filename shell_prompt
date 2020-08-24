@@ -1,21 +1,13 @@
 
 #bash terminal colours
-colour_reset='\033\e[0m\034'
-colour_red='\033\e[31m\034'
-colour_green='\033\e[32m\034'
-colour_yellow='\033\e[33m\034'
-colour_blue='\033\e[34m\034'
-colour_magenta='\033\e[35m\034'
-colour_cyan='\033\e[36m\034'
-colour_white='\033\e[37m\034'
-
-colour_red_b='\033\e[31;1m\034'
-colour_green_b='\033\e[32;1m\034'
-colour_yellow_b='\033\e[33;1m\034'
-colour_blue_b='\033\e[34;1m\034'
-colour_magenta_b='\033\e[35;1m\034'
-colour_cyan_b='\033\e[36;1m\034'
-colour_white_b='\033\e[37;1m\034'
+colour_reset='\001\e[0m\002'
+colour_red='\001\e[31m\002'
+colour_green='\001\e[32m\002'
+colour_yellow='\001\e[33m\002'
+colour_blue='\001\e[34m\002'
+colour_magenta='\001\e[35m\002'
+colour_cyan='\001\e[36m\002'
+colour_white='\001\e[37m\002'
 
 #some useful unicode characters
 line_h='\342\224\200'
@@ -28,7 +20,7 @@ user_and_host(){
 
 interfaces(){
     local ints=$(ip -4 -o addr | awk '!/^[0-9]*: ?lo|link\/ether/ {print $2":"$4}' | grep -v "docker0\|br-" | tr '\n' ' ' | xargs)
-    printf "[$colour_cyan_b""$ints""$colour_reset$colour_red]"
+    printf "[$colour_cyan""$ints""$colour_red]"
 }
 
 workdir(){
@@ -39,7 +31,7 @@ virtualenv_info(){
     # Get Virtual Env
     if [[ -n "$VIRTUAL_ENV" ]]; then
         # Strip out the path and just leave the env name
-        printf "[$colour_magenta_b""venv:${VIRTUAL_ENV##*/}$colour_reset$colour_red]$line_h"
+        printf "[$colour_magenta""venv:${VIRTUAL_ENV##*/}$colour_red]$line_h"
     else
         # In case you don't have one activated
         echo -n ''
@@ -50,7 +42,7 @@ gitbranch_info(){
     branchname=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/*\(.*\)/ \1/' | tr -d '[:space:]')
     
     if [[ -n $branchname ]]; then
-        printf "[$colour_magenta_b""git:$branchname$colour_reset$colour_red]$line_h"
+        printf "[$colour_magenta""git:$branchname$colour_red]$line_h"
     else
         echo -n ''
     fi
@@ -64,7 +56,7 @@ INTERFACES="\$(interfaces)";
 GITBRANCH="\$(gitbranch_info)";
 
 line1="$colour_red$ra_1$line_h$(user_and_host)$line_h$INTERFACES$line_h$(workdir)"
-line2="$ra_2$line_h$line_h$VENV$GITBRANCH$colour_yellow_b\$$colour_reset"
+line2="$ra_2$line_h$line_h$VENV$GITBRANCH$colour_yellow\$$colour_reset"
 
 
 PS1="$line1\n$line2$colour_reset "
