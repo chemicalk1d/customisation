@@ -13,18 +13,44 @@ colour_white='\001\e[37m\002'
 line_h='\342\224\200'
 ra_1='\342\224\214'
 ra_2='\342\224\224'
+blob='\342\225\274'
 
 user_and_host(){
-    printf "[$colour_white\\\u$colour_yellow@$colour_blue\\h$colour_red]"
+    if [ $(tput cols) -gt 65 ]; then
+        printf "[$colour_white$USER$colour_yellow@$colour_blue$HOSTNAME$colour_red]$line_h"
+    else
+        printf "[$colour_white$USER$colour_red]$line_h"
+    fi
+}
+
+uid_and_gid(){
+    if [ $(tput cols) -gt 150 ]; then
+        printf "[$colour_white$UID:$(id -g)$colour_red]$line_h"
+    fi 
 }
 
 interfaces(){
-    local ints=$(ip -4 -o addr | awk '!/^[0-9]*: ?lo|link\/ether/ {print $2":"$4}' | grep -v "docker0\|br-" | tr '\n' ' ' | xargs)
-    printf "[$colour_cyan""$ints""$colour_red]"
+    if [ $(tput cols) -gt 80 ]; then
+        local ints=$(ip -4 -o addr | awk '!/^[0-9]*: ?lo|link\/ether/ {print $2":"$4}' | grep -v "docker0\|br-\|vboxnet\|vmnet" | tr '\n' ' ' | xargs)
+        printf "[$colour_green""$ints""$colour_red]$line_h"
+    fi
 }
 
 workdir(){
-    printf "[$colour_white\$PWD$colour_red]"
+    if [ $(tput cols) -gt 100 ]; then
+        printf "[$colour_white$PWD$colour_red]"
+    elif [ $(tput cols) -gt 60 ]; then
+        printf "[$colour_white$(dirs)$colour_red]"
+    else
+        printf "["$colour_white"${PWD##*/}""$colour_red]"
+    fi
+
+}
+
+keys(){
+    if [ $(tput cols) -gt 150 ]; then
+        printf "[$colour_yellow""ssh-keys:$(ssh-add -l 2>/dev/null | wc -l)""$colour_red]$line_h"
+    fi
 }
 
 virtualenv_info(){
@@ -33,7 +59,6 @@ virtualenv_info(){
         # Strip out the path and just leave the env name
         printf "[$colour_magenta""venv:${VIRTUAL_ENV##*/}$colour_red]$line_h"
     else
-        # In case you don't have one activated
         echo -n ''
     fi
 }
@@ -42,7 +67,11 @@ gitbranch_info(){
     branchname=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/*\(.*\)/ \1/' | tr -d '[:space:]')
     
     if [[ -n $branchname ]]; then
-        printf "[$colour_magenta""git:$branchname$colour_red]$line_h"
+        staged_files=$(git diff --cached --numstat | wc -l)
+        unstaged_files=$(git diff --numstat | wc -l)
+        untracked_files=$(git ls-files --others --exclude-standard | wc -l)
+        printf "[$colour_magenta""git:$branchname:$colour_green$staged_files$colour_magenta:$colour_yellow$unstaged_files$colour_magenta:$colour_blue$untracked_files$colour_red]$line_h"
+    
     else
         echo -n ''
     fi
@@ -51,14 +80,17 @@ gitbranch_info(){
 # disable the default virtualenv prompt change
 export VIRTUAL_ENV_DISABLE_PROMPT=1
 
+USER_AND_HOST="\$(user_and_host)";
+UID_AND_GID="\$(uid_and_gid)";
+KEYS="\$(keys)";
+WORKDIR="\$(workdir)";
 VENV="\$(virtualenv_info)";
 INTERFACES="\$(interfaces)";
 GITBRANCH="\$(gitbranch_info)";
 
-line1="$colour_red$ra_1$line_h$(user_and_host)$line_h$INTERFACES$line_h$(workdir)"
-line2="$ra_2$line_h$line_h$VENV$GITBRANCH$colour_yellow\$$colour_reset"
+line1="$colour_red$ra_1$line_h$USER_AND_HOST$UID_AND_GID$INTERFACES$KEYS$WORKDIR"
+line2="$colour_red$ra_2$line_h$VENV$GITBRANCH$blob$colour_yellow \$$colour_reset"
 
 
-PS1="$line1\n$line2$colour_reset "
-PS2="$line2$colour_reset "
-
+PS1=$(echo "$line1\n$line2$colour_reset ")
+PS2=$(echo "$line2$colour_reset ")
