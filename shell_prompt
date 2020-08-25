@@ -49,7 +49,14 @@ workdir(){
 
 keys(){
     if [ $(tput cols) -gt 150 ]; then
-        printf "[$colour_yellow""ssh-keys:$(ssh-add -l 2>/dev/null | wc -l)""$colour_red]$line_h"
+
+        if [ "$(ssh-add -l)" == "The agent has no identities." ]; then
+            num_keys=0
+        else
+            num_keys=$(ssh-add -l 2>/dev/null | wc -l)
+        fi
+
+        printf "[$colour_yellow""ssh-keys:$num_keys""$colour_red]$line_h"
     fi
 }
 
